@@ -7,7 +7,7 @@ import lombok.Data;
 @AllArgsConstructor
 public class Result {
     private  boolean success;
-    private int code;
+    private Integer code;
     private String msg;
     private Object data;
 

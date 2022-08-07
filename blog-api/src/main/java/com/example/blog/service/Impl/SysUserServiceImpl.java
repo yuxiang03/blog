@@ -5,9 +5,8 @@ import com.example.blog.dao.mapper.SysUserMapper;
 import com.example.blog.dao.pojo.SysUser;
 import com.example.blog.service.LoginService;
 import com.example.blog.service.SysUserService;
-import com.example.blog.vo.ErrorCode;
-import com.example.blog.vo.LoginUserVo;
-import com.example.blog.vo.Result;
+import com.example.blog.vo.*;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
@@ -20,6 +19,20 @@ public class SysUserServiceImpl implements SysUserService {
     private RedisTemplate<String,String> redisTemplate;
     @Autowired
     private LoginService loginService;
+
+    @Override
+    public UserVo findUserVoById(Long id) {
+        SysUser sysUser = sysUserMapper.selectById(id);
+        if (sysUser == null){
+            sysUser = new SysUser();
+            sysUser.setId(1L);
+            sysUser.setAvatar("static/img/logo.b3a48c0.png");
+            sysUser.setNickname("老狗最帅");
+        }
+        UserVo userVo = new UserVo();
+        BeanUtils.copyProperties(sysUser,userVo);
+        return userVo;
+    }
 
     @Override
     public SysUser findUserById(Long id) {

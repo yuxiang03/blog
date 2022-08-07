@@ -16,7 +16,7 @@ public class TagController {
     //  /tags/hot
     @GetMapping("hot")
     public Result hot(){
-        int limit = 6;
+        int limit = 4;
         return tagService.hots(limit);
     }
 }

@@ -14,9 +14,10 @@ public class Article {
 
     private String summary;
 
-    private int commentCounts;
+    //ArticleVo 是返回前的最终范性约束，更改此类中的数据类型同时要更改ArtivleVo
+    private Integer commentCounts;
 
-    private int viewCounts;
+    private Integer viewCounts;
 
     //作者id
     private Long authorId;
@@ -28,7 +29,7 @@ public class Article {
     private Long categoryId;
 
     //置顶
-    private int weight = Article_Common;
+    private Integer weight;
 
     //创建时间
     private Long createDate;

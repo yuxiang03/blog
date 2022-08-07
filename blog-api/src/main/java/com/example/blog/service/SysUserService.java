@@ -2,8 +2,11 @@ package com.example.blog.service;
 
 import com.example.blog.dao.pojo.SysUser;
 import com.example.blog.vo.Result;
+import com.example.blog.vo.UserVo;
 
 public interface SysUserService {
+    UserVo findUserVoById(Long id);
+
     SysUser findUserById(Long id);
 
     SysUser fingUser(String account, String password);
