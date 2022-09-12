@@ -1,7 +1,9 @@
 package com.example.blog.controller;
 
+import com.example.blog.commom.aop.LogAnnotation;
 import com.example.blog.service.ArticleService;
 import com.example.blog.vo.Result;
+import com.example.blog.vo.params.ArticleParam;
 import com.example.blog.vo.params.PageParams;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -16,6 +18,8 @@ public class ArticleController {
 
     //首页 文章列表
     @PostMapping
+    //加上此注解 代表要对此接口记录日志
+    @LogAnnotation(module = "文章",operator = "获取文章列表")
     public Result listArticle(@RequestBody PageParams pageParams){
         return articleService.listArticle(pageParams);
     }
@@ -41,5 +45,10 @@ public class ArticleController {
     @PostMapping("view/{id}")
     public Result findArticleById(@PathVariable("id") Long articleId){
         return articleService.findArticleById(articleId);
+    }
+
+    @PostMapping("publish")
+    public Result publish(@RequestBody ArticleParam articleParam){
+        return articleService.publish(articleParam);
     }
 }

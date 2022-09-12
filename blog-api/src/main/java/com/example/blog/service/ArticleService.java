@@ -1,6 +1,7 @@
 package com.example.blog.service;
 
 import com.example.blog.vo.Result;
+import com.example.blog.vo.params.ArticleParam;
 import com.example.blog.vo.params.PageParams;
 
 public interface ArticleService {
@@ -19,4 +20,7 @@ public interface ArticleService {
 
     //查看文章详情
     Result findArticleById(Long articleId);
+
+    //发布文章
+    Result publish(ArticleParam articleParam);
 }

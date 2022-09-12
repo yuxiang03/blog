@@ -1,16 +1,23 @@
 package com.example.blog.service.Impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.blog.dao.dos.Archives;
 import com.example.blog.dao.mapper.ArticleBodyMapper;
 import com.example.blog.dao.mapper.ArticleMapper;
+import com.example.blog.dao.mapper.ArticleTagMapper;
 import com.example.blog.dao.pojo.Article;
 import com.example.blog.dao.pojo.ArticleBody;
+import com.example.blog.dao.pojo.ArticleTag;
+import com.example.blog.dao.pojo.SysUser;
 import com.example.blog.service.*;
+import com.example.blog.utils.UserThreadLocal;
 import com.example.blog.vo.ArticleBodyVo;
 import com.example.blog.vo.ArticleVo;
 import com.example.blog.vo.Result;
+import com.example.blog.vo.TagVo;
+import com.example.blog.vo.params.ArticleParam;
 import com.example.blog.vo.params.PageParams;
 import org.joda.time.DateTime;
 import org.springframework.beans.BeanUtils;
@@ -19,7 +26,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class ArticleServiceImpl implements ArticleService {
@@ -28,6 +37,8 @@ public class ArticleServiceImpl implements ArticleService {
     private ArticleMapper articleMapper;
     @Autowired
     private ArticleBodyMapper articleBodyMapper;
+    @Autowired
+    private ArticleTagMapper articleTagMapper;
     @Autowired
     private TagService tagService;
     @Autowired
@@ -38,10 +49,41 @@ public class ArticleServiceImpl implements ArticleService {
     private ThreadService threadService;
 
     @Override
+    public Result listArticle(PageParams pageParams){
+        Page<Article> page = new Page<>(pageParams.getPage(),pageParams.getPageSize());
+        IPage<Article> articleIPage = articleMapper.listArticle(page,
+                pageParams.getCategoryId(),
+                pageParams.getTagId(),
+                pageParams.getYear(),
+                pageParams.getMonth());
+        List<Article> records = articleIPage.getRecords();
+        return Result.success(copyList(records,true,true));
+    }
+
+    /*@Override
     public Result listArticle(PageParams pageParams) {
         //1.分页查询article数据库表
         Page<Article> page = new Page<>(pageParams.getPage(),pageParams.getPageSize());
         LambdaQueryWrapper<Article> queryWrapper = new LambdaQueryWrapper<>();
+        if (pageParams.getCategoryId() != null){
+            //and category_id##{categoryId}
+            queryWrapper.eq(Article::getCategoryId,pageParams.getCategoryId());
+        }
+        List<Long> articleIdList = new ArrayList<>();
+        if (pageParams.getTagId() != null){
+            //加入标签 条件查询
+            //article表中 并没有tag字段 一篇文章 有多个标签
+            //article_tag article_id 1 : n tag_id
+            LambdaQueryWrapper<ArticleTag> articleTagLambdaQueryWrapper = new LambdaQueryWrapper<>();
+            articleTagLambdaQueryWrapper.eq(ArticleTag::getTagId,pageParams.getTagId());
+            List<ArticleTag> articleTags = articleTagMapper.selectList(articleTagLambdaQueryWrapper);
+            for (ArticleTag articleTag : articleTags) {
+                articleIdList.add(articleTag.getArticleId());
+            }
+            if (articleIdList.size() > 0){
+                queryWrapper.in(Article::getId,articleIdList);
+            }
+        }
         //是否置顶进行排序
         //order by create_date desc
         queryWrapper.orderByDesc(Article::getWeight,Article::getCreateDate);
@@ -50,7 +92,7 @@ public class ArticleServiceImpl implements ArticleService {
         List<Article> records =  articlePage.getRecords();
         List<ArticleVo> articleVoList = copyList(records,true,true);
         return Result.success(articleVoList);
-    }
+    }*/
 
     @Override
     public Result hotArticle(int limit) {
@@ -96,6 +138,51 @@ public class ArticleServiceImpl implements ArticleService {
          */
         threadService.updateActicleViewCount(articleMapper,article);
         return Result.success(articleVo);
+    }
+
+    @Override
+    public Result publish(ArticleParam articleParam) {
+        //此接口要加入到登陆拦截当中
+        SysUser sysUser = UserThreadLocal.get();
+        /**
+         * 1.发布文章 目的 构建Article对象
+         * 2.作者id 当前的登陆用户
+         * 3.标签 要将标签加入到 关联列表当中
+         * 4.body 内容存储
+         */
+        Article article = new Article();
+        article.setAuthorId(sysUser.getId());
+        article.setWeight(Article.Article_Common);
+        article.setViewCounts(0);
+        article.setTitle(articleParam.getTitle());
+        article.setSummary(articleParam.getSummary());
+        article.setCreateDate(System.currentTimeMillis());
+        article.setCommentCounts(0);
+        article.setCategoryId(articleParam.getCategory().getId());
+        //插入之后 会生成一个文章id
+        this.articleMapper.insert(article);
+        //tag
+        List<TagVo> tags = articleParam.getTags();
+        if (tags == null){
+            for (TagVo tag : tags) {
+                Long articleId = article.getId();
+                ArticleTag articleTag = new ArticleTag();
+                articleTag.setTagId(tag.getId());
+                articleTag.setArticleId(articleId);
+                articleTagMapper.insert(articleTag);
+            }
+        }
+        //body
+        ArticleBody articleBody = new ArticleBody();
+        articleBody.setArticleId(article.getId());
+        articleBody.setContent(articleParam.getBody().getContent());
+        articleBody.setContentHtml(articleParam.getBody().getContentHtml());
+        articleBodyMapper.insert(articleBody);
+        article.setBodyId(articleBody.getId());
+        articleMapper.updateById(article);
+        Map<String,String> map = new HashMap<>();
+        map.put("id",article.getId().toString());
+        return Result.success(map);
     }
 
     private List<ArticleVo> copyList(List<Article> records,boolean isTag,boolean isAuthor) {

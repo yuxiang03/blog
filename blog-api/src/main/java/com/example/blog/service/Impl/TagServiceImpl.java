@@ -1,5 +1,6 @@
 package com.example.blog.service.Impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.CollectionUtils;
 import com.example.blog.dao.mapper.TagMapper;
 import com.example.blog.dao.pojo.Tag;
@@ -51,6 +52,24 @@ public class TagServiceImpl implements TagService {
         List<Tag> tagList = tagMapper.findTagsByTagIds(tagIds);
         return Result.success(tagList);
 
+    }
+
+    @Override
+    public Result findAll() {
+        List<Tag> tags = this.tagMapper.selectList(new LambdaQueryWrapper<>());
+        return Result.success(copyList(tags));
+    }
+
+    @Override
+    public Result findAllDetail() {
+        List<Tag> tags = this.tagMapper.selectList(new LambdaQueryWrapper<>());
+        return Result.success(copyList(tags));
+    }
+
+    @Override
+    public Result findDetailById(Long id) {
+        Tag tag = tagMapper.selectById(id);
+        return Result.success(copy(tag));
     }
 
     private List<TagVo> copyList(List<Tag> tagList) {
