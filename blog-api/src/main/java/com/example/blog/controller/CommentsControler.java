@@ -12,7 +12,7 @@ public class CommentsControler {
     @Autowired
     private CommentsService commentsService;
 
-    //comments/article/{id}
+    //article/{id}
 
     @GetMapping("article/{id}")
     public Result comments(@PathVariable("id") Long id){
